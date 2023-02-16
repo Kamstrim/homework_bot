@@ -130,7 +130,8 @@ def main():
             try:
                 response = get_api_answer(timestamp)
                 timestamp = response['current_date']
-                if homework := check_response(response):
+                if check_response(response):
+                    homework = check_response(response)
                     current_status = parse_status(homework)
                     if current_status != last_status:
                         send_message(bot, current_status)
