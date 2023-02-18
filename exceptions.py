@@ -3,5 +3,9 @@ class ResponseError(Exception):
     ...
 
 
+class HTTPStatusError(Exception):
+    """Ошибка подключения"""
+    ...
+
 
 

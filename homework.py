@@ -9,13 +9,14 @@ import telegram
 
 from dotenv import load_dotenv
 
-from exceptions import ResponseError
+from exceptions import ResponseError, HTTPStatusError
 
 load_dotenv()
 
 PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
+
 ONE_WEEK_IN_UNIX = 604800
 
 RETRY_PERIOD = 600
@@ -28,11 +29,12 @@ HOMEWORK_VERDICTS = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    stream=sys.stdout,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-)
+if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.DEBUG,
+        stream=sys.stdout,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -44,14 +46,7 @@ def check_tokens():
         TELEGRAM_TOKEN,
         TELEGRAM_CHAT_ID
     ]
-    if not all(tokens):
-        logger.critical(
-            'Отсутствие обязательных переменных '
-            'окружения во время запуска бота.'
-        )
-        return False
-    else:
-        return True
+    return all(tokens)
 
 
 def send_message(bot, message):
@@ -77,7 +72,7 @@ def get_api_answer(timestamp):
         raise ResponseError(f'Ошибка запроса, {error}')
     if response.status_code != HTTPStatus.OK:
         logging.error(f'Ошибка HTTPStatus не ОК - {response.status_code}')
-        raise AssertionError(response.status_code)
+        raise HTTPStatusError(response.status_code)
     return response.json()
 
 
@@ -129,8 +124,7 @@ def parse_status(homework):
 
 def main():
     """Основная логика работы бота."""
-    last_status = ''
-    last_message_error = ''
+    last_message = ''
 
     if check_tokens():
         bot = telegram.Bot(token=TELEGRAM_TOKEN)
@@ -138,25 +132,28 @@ def main():
         while True:
             try:
                 response = get_api_answer(timestamp)
-                print(response)
                 homework = check_response(response)
                 timestamp = response['current_date']
                 if homework:
                     current_status = parse_status(homework)
-                    if current_status != last_status:
+                    if current_status != last_message:
                         send_message(bot, current_status)
-                        last_status = current_status
+                        last_message = current_status
                     else:
                         logger.debug('Статус работы не изменился')
             except Exception as error:
                 message = f'Сбой в работе программы: {error}'
                 logger.error(message)
-                if message != last_message_error:
-                    send_message(bot, message)
-                    last_message_error = message
-
+                if message != last_message:
+                    send_message(bot, current_status)
+                    last_message = message
             finally:
                 time.sleep(RETRY_PERIOD)
+    else:
+        logger.critical(
+            'Отсутствие обязательных переменных '
+            'окружения во время запуска бота.'
+        )
 
 
 if __name__ == '__main__':
