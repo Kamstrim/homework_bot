@@ -1,11 +1,11 @@
-# Homework Bot
+# Описание
 Данный телеграм бот присылает уведомления о статусе проверки домашних работ ревьюером в рамках курса Яндекс Практикум.
 
-## **Стек**
+## Стек технологий
 
-Python 3, Telegram API
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 
-## **Как запустить проект:**
+## Как запустить проект
 Клонировать репозиторий и перейти в него в командной строке:
 ```
 git clone git@github.com:kamstim/homework_bot.git
